@@ -1,0 +1,6 @@
+node_modules/
+.hf_papers_last_run.json
+__pycache__/
+*.pyc
+.venv/
+.DS_Store

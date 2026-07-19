@@ -1,0 +1,20 @@
+{
+  "name": "hf-papers-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Hugging Face papers — search, daily digests, metadata, citations, and indexing",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "server.js",
+  "bin": { "hf-papers-mcp": "server.js" },
+  "files": ["server.js", "src/", "scripts/", "bin/"],
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test \"test/**/*.test.js\"",
+    "daily": "node bin/daily.js"
+  },
+  "keywords": ["mcp", "model-context-protocol", "huggingface", "papers", "arxiv", "research", "llm"],
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}
