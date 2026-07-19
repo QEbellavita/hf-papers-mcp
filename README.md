@@ -1,4 +1,6 @@
-# hf-papers-mcp
+<p align="center">
+  <img src="./assets/header.svg" alt="hf-papers-mcp — Hugging Face Papers, inside your assistant" width="100%">
+</p>
 
 An MCP server that lets your assistant read Hugging Face Papers — search them, pull the
 daily curated list, fetch metadata, and generate citations.
