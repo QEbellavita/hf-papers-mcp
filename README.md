@@ -8,31 +8,25 @@ counts and abstracts, instead of whatever was in the model's training data.
 
 ## Install
 
-Add to your MCP client config (Claude Desktop, Claude Code, or any MCP host):
+Clone it, then point your MCP client (Claude Desktop, Claude Code, or any MCP host) at
+`server.js`:
 
-```json
-{
-  "mcpServers": {
-    "hf-papers": {
-      "command": "npx",
-      "args": ["-y", "hf-papers-mcp"]
-    }
-  }
-}
+```bash
+git clone https://github.com/QEbellavita/hf-papers-mcp
 ```
-
-Or from a clone:
 
 ```json
 {
   "mcpServers": {
     "hf-papers": {
       "command": "node",
-      "args": ["/path/to/hf-papers-mcp/server.js"]
+      "args": ["/absolute/path/to/hf-papers-mcp/server.js"]
     }
   }
 }
 ```
+
+Not on npm — use the clone above rather than `npx hf-papers-mcp`.
 
 **Requires [uv](https://github.com/astral-sh/uv).** The Python side declares its
 dependencies inline (PEP 723), so `uv run` resolves them on first call — no virtualenv to

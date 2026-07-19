@@ -37,11 +37,16 @@ function runPaperManager(args) {
           resolve({ error: reason, stderr: stderr?.trim() || '' });
           return;
         }
+        // The python3 path has no huggingface_hub, so anything it does return is
+        // partial. Label it rather than let it read as a complete answer.
+        const degraded = cmd === 'python3'
+          ? { degraded: 'uv not installed; ran bare python3 without huggingface_hub — results may be incomplete' }
+          : {};
         try {
-          resolve(JSON.parse(stdout));
+          resolve({ ...JSON.parse(stdout), ...degraded });
         } catch {
           // Output wasn't JSON — return raw text (e.g., citation command)
-          resolve({ result: stdout.trim() });
+          resolve({ result: stdout.trim(), ...degraded });
         }
       });
     };
