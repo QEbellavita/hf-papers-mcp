@@ -1,33 +1,35 @@
 'use strict';
 
-// Regression: search/daily/index return JSON arrays. An earlier version spread
-// the parsed value into an object literal, which turns [a,b] into {0:a,1:b} —
-// so every list-returning tool handed the caller an index-keyed map instead of
-// a list, and only the live integration test caught it. These run offline by
-// stubbing execFile, so the shape is checked without touching the HF API.
-
-const cp = require('child_process');
-
-const PAPERS = [
-  { arxiv_id: '2605.29707', title: 'Domino', upvotes: 152 },
-  { arxiv_id: '2602.06036', title: 'DFlash', upvotes: 89 },
-];
-
-// Must be stubbed before src/papers.js is required — it destructures execFile
-// at module load, so reassigning cp.execFile afterwards has no effect. Install
-// one stub that defers to a swappable responder. node:test gives each file its
-// own process, so mutating the module here is safe.
-let lastCmd = null;
-let respond = () => JSON.stringify(PAPERS);
-cp.execFile = (cmd, args, opts, cb) => {
-  lastCmd = cmd;
-  process.nextTick(() => cb(null, respond(), ''));
-};
+// Regression: search/daily return JSON arrays. An earlier version spread the
+// parsed value into an object literal, which turns [a,b] into {0:a,1:b} — so
+// every list-returning tool handed the caller an index-keyed map instead of a
+// list, and only the live integration test caught it. These run offline by
+// stubbing global fetch (the subprocess bridge these originally stubbed via
+// execFile was ported to native Node), so the shape is checked without
+// touching the HF API.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const papers = require('../src/papers.js');
 
+const PAPERS = [
+  { paper: { id: '2605.29707', title: 'Domino', upvotes: 152, summary: 's', authors: [] } },
+  { paper: { id: '2602.06036', title: 'DFlash', upvotes: 89, summary: 's', authors: [] } },
+];
+
+const ATOM = `<feed><title>feed</title><entry><title>One Paper</title>
+<summary>An abstract.</summary><author><name>A</name></author></entry></feed>`;
+
+// hf.js resolves global fetch at call time, so stubbing here covers every
+// handler call below. node:test gives each file its own process — safe.
+global.fetch = async (url) => {
+  const target = String(url);
+  if (target.includes('export.arxiv.org')) {
+    return { ok: true, status: 200, text: async () => ATOM };
+  }
+  return { ok: true, status: 200, json: async () => PAPERS };
+};
+
+const papers = require('../src/papers.js');
 const handlerFor = (name) => papers.tools({}).find((t) => t.def.name === name).handler;
 
 test('hf_papers_search preserves the array instead of index-keying it', async () => {
@@ -49,24 +51,25 @@ test('an array result survives JSON round-trip as an array', async () => {
   assert.ok(Array.isArray(JSON.parse(JSON.stringify(result))));
 });
 
-test('object results are still returned as objects', async (t) => {
-  respond = () => JSON.stringify({ title: 'One Paper', authors: ['A'] });
-  t.after(() => { respond = () => JSON.stringify(PAPERS); });
+test('object results are still returned as objects', async () => {
   const result = await handlerFor('hf_papers_info')({ arxiv_id: '2605.29707' });
   assert.equal(Array.isArray(result), false);
   assert.equal(result.title, 'One Paper');
 });
 
-test('non-JSON output still comes back as raw text', async (t) => {
-  respond = () => '@article{doe2026, title={A Citation}}';
-  t.after(() => { respond = () => JSON.stringify(PAPERS); });
+test('citation still comes back as raw text in a { result } wrapper', async () => {
   const result = await handlerFor('hf_papers_citation')({ arxiv_id: '2605.29707' });
   assert.equal(Array.isArray(result), false);
   assert.match(result.result, /@article/);
 });
 
-test('prefers uv, not a bare python3 fallback, when uv succeeds', async () => {
-  lastCmd = null;
-  await handlerFor('hf_papers_search')({ query: 'x' });
-  assert.equal(lastCmd, 'uv');
+test('a fetch failure resolves { error }, never a rejection', async () => {
+  const original = global.fetch;
+  global.fetch = async () => { throw new Error('network down'); };
+  try {
+    const result = await handlerFor('hf_papers_search')({ query: 'x' });
+    assert.match(result.error, /network down/);
+  } finally {
+    global.fetch = original;
+  }
 });
