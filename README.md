@@ -10,6 +10,11 @@ daily curated list, fetch metadata, and generate citations.
 Ask *"what shipped on speculative decoding this week?"* and get real papers with upvote
 counts and abstracts, instead of whatever was in the model's training data.
 
+![Demo: daily papers, keyword search, and BibTeX citation over MCP](assets/demo.gif)
+
+*(Recorded with [vhs](https://github.com/charmbracelet/vhs) via `vhs demo.tape` — the
+session runs `bin/demo.js`, a real MCP client against the live API.)*
+
 ## Install
 
 Point your MCP client (Claude Desktop, Claude Code, or any MCP host) at it:
@@ -28,13 +33,9 @@ Point your MCP client (Claude Desktop, Claude Code, or any MCP host) at it:
 Or from source: `git clone https://github.com/QEbellavita/hf-papers-mcp` and point
 `command: node, args: [/absolute/path/to/hf-papers-mcp/server.js]` at the checkout.
 
-**Requires [uv](https://github.com/astral-sh/uv).** The Python side declares its
-dependencies inline (PEP 723), so `uv run` resolves them on first call — no virtualenv to
-create or `pip install` to remember. Without uv it falls back to bare `python3`, which
-lacks `huggingface_hub` and will return degraded results rather than pretending
-everything is fine.
-
-No API key needed for reads. Set `HF_TOKEN` only if you want `link` or `claim`.
+Pure Node (>= 18), one dependency (`@modelcontextprotocol/sdk`), no Python. No API key
+needed — everything is a public read. If `HF_TOKEN` is set (or you're logged in via
+`hf auth login`), it's sent along, which helps with rate limits.
 
 ## Tools
 
@@ -83,9 +84,20 @@ the JSON stream and silently degrade structured responses into raw strings.
 
 ## Notes
 
-Everything runs as a fresh subprocess per call — no daemon, no cached state, nothing
-persisted beyond the optional `bin/daily.js` run marker. Diagnostics go to stderr, since
-stdout is the MCP transport and anything else written there breaks the protocol.
+Every call is a direct HTTPS request to the public Hugging Face / arXiv APIs — no
+daemon, no cached state, nothing persisted beyond the optional `bin/daily.js` run
+marker. Diagnostics go to stderr, since stdout is the MCP transport and anything else
+written there breaks the protocol.
+
+Earlier versions shelled out to a Python sidecar (`scripts/paper_manager.py` via `uv`);
+v1.1.0 ported the six exposed operations to native Node, so cold-start latency dropped
+from ~12s to nothing and the uv/Python requirement is gone.
+
+## Citing
+
+If this server is useful in your research workflow, cite it via the repo's
+[CITATION.cff](CITATION.cff) (GitHub's "Cite this repository" button), or the
+Zenodo DOI once archived.
 
 ## Licence
 

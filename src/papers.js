@@ -1,66 +1,16 @@
 'use strict';
 
-const { execFile } = require('child_process');
-const path = require('path');
+const hf = require('./hf.js');
 
-const SCRIPT = path.resolve(__dirname, '..', 'scripts', 'paper_manager.py');
-// A warm `uv run` already takes ~12.5s; the first (cold) call also resolves the
-// PEP 723 dependency set, which can take far longer. The old 15s budget timed
-// out on cold starts and silently degraded to a depless python3 — so allow real
-// headroom here.
-const TIMEOUT_MS = 60_000;
-
-/**
- * Shell out to paper_manager.py and return parsed JSON.
- * Prefers `uv run` (auto-resolves PEP 723 deps). Falls back to `python3` ONLY
- * when uv is genuinely absent — a uv timeout or runtime failure is surfaced
- * rather than masked, because python3 here lacks huggingface_hub and would
- * return misleading/empty data.
- *
- * IMPORTANT: --json must come BEFORE the subcommand (argparse global flag).
- */
-function runPaperManager(args) {
-  return new Promise((resolve) => {
-    const tryRun = (cmd, cmdArgs) => {
-      execFile(cmd, cmdArgs, {
-        timeout: TIMEOUT_MS,
-        maxBuffer: 1024 * 1024,
-      }, (err, stdout, stderr) => {
-        if (err && cmd === 'uv' && err.code === 'ENOENT') {
-          // uv binary not installed — fall back to python3
-          tryRun('python3', [SCRIPT, '--json', ...args]);
-          return;
-        }
-        if (err) {
-          // Surface real failures (timeout, runtime error) instead of degrading.
-          const reason = err.killed ? `timed out after ${TIMEOUT_MS}ms` : err.message;
-          resolve({ error: reason, stderr: stderr?.trim() || '' });
-          return;
-        }
-        // The python3 path has no huggingface_hub, so anything it does return is
-        // partial. Label it rather than let it read as a complete answer.
-        const degraded = cmd === 'python3'
-          ? { degraded: 'uv not installed; ran bare python3 without huggingface_hub — results may be incomplete' }
-          : {};
-        try {
-          const parsed = JSON.parse(stdout);
-          // search/daily/index return arrays. Object-spreading an array yields
-          // {0:…,1:…}, so the caller receives a map keyed by index instead of a
-          // list. Keep arrays intact; only wrap when there is a label to attach.
-          if (Array.isArray(parsed)) {
-            resolve(degraded.degraded ? { results: parsed, ...degraded } : parsed);
-            return;
-          }
-          resolve({ ...parsed, ...degraded });
-        } catch {
-          // Output wasn't JSON — return raw text (e.g., citation command)
-          resolve({ result: stdout.trim(), ...degraded });
-        }
-      });
-    };
-    // Try uv first (auto-resolves PEP 723 dependencies), then python3
-    tryRun('uv', ['run', SCRIPT, '--json', ...args]);
-  });
+// Handlers resolve to { error } instead of rejecting, matching the contract of
+// the old Python-subprocess bridge: callers always get JSON, never an MCP-level
+// exception, for expected failures (network down, bad id, API error).
+async function safely(op) {
+  try {
+    return await op();
+  } catch (err) {
+    return { error: err.message };
+  }
 }
 
 module.exports = {
@@ -84,9 +34,7 @@ module.exports = {
             required: ['query'],
           },
         },
-        handler: async (args) => {
-          return runPaperManager(['search', '--query', args.query, '--limit', String(args.limit || 10)]);
-        },
+        handler: (args) => safely(() => hf.searchPapers(args.query, args.limit || 10)),
       },
       {
         def: {
@@ -100,11 +48,7 @@ module.exports = {
             },
           },
         },
-        handler: async (args) => {
-          const cmdArgs = ['daily', '--limit', String(args.limit || 15)];
-          if (args.date) cmdArgs.push('--date', args.date);
-          return runPaperManager(cmdArgs);
-        },
+        handler: (args) => safely(() => hf.dailyPapers(args.date, args.limit || 15)),
       },
       {
         def: {
@@ -118,9 +62,7 @@ module.exports = {
             required: ['arxiv_id'],
           },
         },
-        handler: async (args) => {
-          return runPaperManager(['info', '--arxiv-id', args.arxiv_id]);
-        },
+        handler: (args) => safely(() => hf.getArxivInfo(args.arxiv_id)),
       },
       {
         def: {
@@ -135,9 +77,9 @@ module.exports = {
             required: ['arxiv_id'],
           },
         },
-        handler: async (args) => {
-          return runPaperManager(['citation', '--arxiv-id', args.arxiv_id, '--format', args.format || 'bibtex']);
-        },
+        handler: (args) => safely(async () => ({
+          result: await hf.generateCitation(args.arxiv_id, args.format || 'bibtex'),
+        })),
       },
       {
         def: {
@@ -151,9 +93,7 @@ module.exports = {
             required: ['arxiv_id'],
           },
         },
-        handler: async (args) => {
-          return runPaperManager(['check', '--arxiv-id', args.arxiv_id]);
-        },
+        handler: (args) => safely(() => hf.checkPaper(args.arxiv_id)),
       },
       {
         def: {
@@ -167,9 +107,7 @@ module.exports = {
             required: ['arxiv_id'],
           },
         },
-        handler: async (args) => {
-          return runPaperManager(['index', '--arxiv-id', args.arxiv_id]);
-        },
+        handler: (args) => safely(() => hf.indexPaper(args.arxiv_id)),
       },
     ];
   },

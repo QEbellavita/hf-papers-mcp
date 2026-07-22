@@ -1,0 +1,17 @@
+{
+  "title": "hf-papers-mcp: an MCP server for Hugging Face Papers",
+  "description": "An MCP (Model Context Protocol) server that lets AI assistants read Hugging Face Papers — keyword search, the daily curated list, arXiv metadata, citation generation, and index checks — as six tools over stdio. Pure Node, no API key required.",
+  "creators": [
+    { "name": "Switzer, Belinda" }
+  ],
+  "license": "MIT",
+  "upload_type": "software",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "huggingface",
+    "arxiv",
+    "papers",
+    "research"
+  ]
+}

@@ -3,9 +3,8 @@
 
 // Standalone MCP server exposing the Hugging Face papers tools over stdio.
 //
-// The tool definitions live in src/papers.js, which shells out to
-// scripts/paper_manager.py. Nothing here holds state: every call is a fresh
-// subprocess against the public Hugging Face API.
+// The tool definitions live in src/papers.js; src/hf.js talks to the public
+// Hugging Face / arXiv APIs directly over fetch. Nothing here holds state.
 
 const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');

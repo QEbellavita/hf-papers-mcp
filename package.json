@@ -1,19 +1,12 @@
 {
   "name": "hf-papers-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for Hugging Face papers \u2014 search, daily digests, metadata, citations, and indexing",
+  "version": "1.1.0",
+  "description": "MCP server for Hugging Face papers — search, daily digests, metadata, citations, and indexing. Pure Node, no Python required.",
   "license": "MIT",
   "type": "commonjs",
   "main": "server.js",
-  "bin": {
-    "hf-papers-mcp": "server.js"
-  },
-  "files": [
-    "server.js",
-    "src/",
-    "scripts/",
-    "bin/"
-  ],
+  "bin": { "hf-papers-mcp": "server.js" },
+  "files": ["server.js", "src/", "bin/"],
   "scripts": {
     "start": "node server.js",
     "test": "node --test",
