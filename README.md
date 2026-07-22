@@ -2,6 +2,8 @@
   <img src="./assets/header.svg" alt="hf-papers-mcp — Hugging Face Papers, inside your assistant" width="100%">
 </p>
 
+<p align="center">[![tests](https://github.com/QEbellavita/hf-papers-mcp/actions/workflows/test.yml/badge.svg)](https://github.com/QEbellavita/hf-papers-mcp/actions/workflows/test.yml)</p>
+
 An MCP server that lets your assistant read Hugging Face Papers — search them, pull the
 daily curated list, fetch metadata, and generate citations.
 

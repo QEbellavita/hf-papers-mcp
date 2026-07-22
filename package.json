@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "start": "node server.js",
-    "test": "node --test \"test/**/*.test.js\"",
+    "test": "node --test",
     "daily": "node bin/daily.js",
     "prepublishOnly": "npm test"
   },
