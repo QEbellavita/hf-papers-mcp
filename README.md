@@ -2,7 +2,10 @@
   <img src="./assets/header.svg" alt="hf-papers-mcp — Hugging Face Papers, inside your assistant" width="100%">
 </p>
 
-<p align="center"><a href="https://github.com/QEbellavita/hf-papers-mcp/actions/workflows/test.yml"><img src="https://github.com/QEbellavita/hf-papers-mcp/actions/workflows/test.yml/badge.svg" alt="tests"></a></p>
+<p align="center">
+  <a href="https://github.com/QEbellavita/hf-papers-mcp/actions/workflows/test.yml"><img src="https://github.com/QEbellavita/hf-papers-mcp/actions/workflows/test.yml/badge.svg" alt="tests"></a>
+  <a href="https://doi.org/10.5281/zenodo.21484748"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.21484748.svg" alt="DOI"></a>
+</p>
 
 An MCP server that lets your assistant read Hugging Face Papers — search them, pull the
 daily curated list, fetch metadata, and generate citations.
@@ -97,7 +100,8 @@ from ~12s to nothing and the uv/Python requirement is gone.
 
 If this server is useful in your research workflow, cite it via the repo's
 [CITATION.cff](CITATION.cff) (GitHub's "Cite this repository" button), or the
-Zenodo DOI once archived.
+Zenodo DOI, [10.5281/zenodo.21484748](https://doi.org/10.5281/zenodo.21484748) — a
+concept DOI that always resolves to the latest archived version.
 
 ## Licence
 
