@@ -43,7 +43,15 @@ function runPaperManager(args) {
           ? { degraded: 'uv not installed; ran bare python3 without huggingface_hub — results may be incomplete' }
           : {};
         try {
-          resolve({ ...JSON.parse(stdout), ...degraded });
+          const parsed = JSON.parse(stdout);
+          // search/daily/index return arrays. Object-spreading an array yields
+          // {0:…,1:…}, so the caller receives a map keyed by index instead of a
+          // list. Keep arrays intact; only wrap when there is a label to attach.
+          if (Array.isArray(parsed)) {
+            resolve(degraded.degraded ? { results: parsed, ...degraded } : parsed);
+            return;
+          }
+          resolve({ ...parsed, ...degraded });
         } catch {
           // Output wasn't JSON — return raw text (e.g., citation command)
           resolve({ result: stdout.trim(), ...degraded });
